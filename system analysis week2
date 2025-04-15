@@ -1,0 +1,668 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Drawing;
+using System.Windows.Forms;
+
+namespace BookingSystemUI
+{
+    // Helper Classes
+    public class Booking
+    {
+        public int Id { get; set; }
+        public string CustomerName { get; set; }
+        public DateTime Date { get; set; }
+        public string RoomType { get; set; }
+    }
+
+    public class ReportItem
+    {
+        public DateTime Date { get; set; }
+        public string CustomerName { get; set; }
+        public decimal Amount { get; set; }
+        public string Status { get; set; }
+    }
+
+    // Login Form
+    public class LoginForm : Form
+    {
+        private TextBox txtUsername;
+        private TextBox txtPassword;
+        private Button btnLogin;
+        private Label lblTitle;
+        private Label lblError;
+
+        public LoginForm()
+        {
+            InitializeLoginForm();
+        }
+
+        private void InitializeLoginForm()
+        {
+            // Window settings
+            this.Text = "Login - Booking System";
+            this.Size = new Size(400, 350);
+            this.BackColor = Color.FromArgb(245, 247, 250);
+            this.StartPosition = FormStartPosition.CenterScreen;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+
+            // Title label
+            lblTitle = new Label();
+            lblTitle.Text = "Login";
+            lblTitle.Font = new Font("Segoe UI", 18, FontStyle.Bold);
+            lblTitle.ForeColor = Color.FromArgb(46, 58, 89);
+            lblTitle.AutoSize = true;
+            lblTitle.Location = new Point(150, 30);
+            this.Controls.Add(lblTitle);
+
+            // Username field
+            Label lblUsername = new Label();
+            lblUsername.Text = "Username:";
+            lblUsername.Location = new Point(50, 100);
+            lblUsername.AutoSize = true;
+            this.Controls.Add(lblUsername);
+
+            txtUsername = new TextBox();
+            txtUsername.Location = new Point(50, 130);
+            txtUsername.Size = new Size(300, 30);
+            txtUsername.Font = new Font("Segoe UI", 10);
+            this.Controls.Add(txtUsername);
+
+            // Password field
+            Label lblPassword = new Label();
+            lblPassword.Text = "Password:";
+            lblPassword.Location = new Point(50, 180);
+            lblPassword.AutoSize = true;
+            this.Controls.Add(lblPassword);
+
+            txtPassword = new TextBox();
+            txtPassword.Location = new Point(50, 210);
+            txtPassword.Size = new Size(300, 30);
+            txtPassword.PasswordChar = '*';
+            txtPassword.Font = new Font("Segoe UI", 10);
+            this.Controls.Add(txtPassword);
+
+            // Login button
+            btnLogin = new Button();
+            btnLogin.Text = "Login";
+            btnLogin.Location = new Point(50, 260);
+            btnLogin.Size = new Size(300, 40);
+            btnLogin.BackColor = Color.FromArgb(37, 99, 235);
+            btnLogin.ForeColor = Color.White;
+            btnLogin.FlatStyle = FlatStyle.Flat;
+            btnLogin.Font = new Font("Segoe UI", 12, FontStyle.Bold);
+            btnLogin.Click += BtnLogin_Click;
+            this.Controls.Add(btnLogin);
+
+            // Error message
+            lblError = new Label();
+            lblError.ForeColor = Color.Red;
+            lblError.Location = new Point(50, 310);
+            lblError.AutoSize = true;
+            this.Controls.Add(lblError);
+        }
+
+        private void BtnLogin_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txtUsername.Text) || string.IsNullOrEmpty(txtPassword.Text))
+            {
+                lblError.Text = "Please enter both username and password";
+                return;
+            }
+
+            if (AuthenticateUser(txtUsername.Text, txtPassword.Text))
+            {
+                this.DialogResult = DialogResult.OK;
+                this.Close();
+            }
+            else
+            {
+                lblError.Text = "Invalid username or password";
+            }
+        }
+
+        private bool AuthenticateUser(string username, string password)
+        {
+            // In a real application, this would check against a database
+            return (username == "admin" && password == "12345");
+        }
+    }
+
+    // Main Booking System Form
+    public class MainForm : Form
+    {
+        private Panel sidebar;
+        private Panel dashboard;
+        private Label lblHeader;
+        private Panel card1, card2, card3;
+
+        private readonly Color bgColor = Color.FromArgb(245, 247, 250);
+        private readonly Color sidebarColor = Color.FromArgb(46, 58, 89);
+        private readonly Color accentColor = Color.FromArgb(37, 99, 235);
+
+        public MainForm()
+        {
+            InitializeComponent();
+        }
+
+        private void InitializeComponent()
+        {
+            this.Text = "Booking System";
+            this.Size = new Size(1000, 600);
+            this.BackColor = bgColor;
+            this.Font = new Font("Segoe UI", 10);
+
+            // Sidebar
+            sidebar = new Panel();
+            sidebar.BackColor = sidebarColor;
+            sidebar.Size = new Size(220, this.Height);
+            sidebar.Dock = DockStyle.Left;
+            this.Controls.Add(sidebar);
+
+            string[] items = {
+                "Dashboard",
+                "Booking Management",
+                "Reports",
+                "Settings",
+                "Logout"
+            };
+
+            for (int i = 0; i < items.Length; i++)
+            {
+                Button btn = new Button();
+                btn.Text = items[i];
+                btn.Dock = DockStyle.Top;
+                btn.Height = 50;
+                btn.FlatStyle = FlatStyle.Flat;
+                btn.FlatAppearance.BorderSize = 0;
+                btn.ForeColor = Color.White;
+                btn.BackColor = sidebarColor;
+                btn.TextAlign = ContentAlignment.MiddleLeft;
+                btn.Tag = items[i];
+                btn.Click += SidebarButton_Click;
+                sidebar.Controls.Add(btn);
+                sidebar.Controls.SetChildIndex(btn, 0);
+            }
+
+            // Header
+            lblHeader = new Label();
+            lblHeader.Text = "Dashboard";
+            lblHeader.Font = new Font("Segoe UI", 16, FontStyle.Bold);
+            lblHeader.Location = new Point(250, 20);
+            lblHeader.AutoSize = true;
+            this.Controls.Add(lblHeader);
+
+            // Dashboard
+            dashboard = new Panel();
+            dashboard.Location = new Point(250, 70);
+            dashboard.Size = new Size(700, 200);
+            dashboard.BackColor = Color.Transparent;
+            this.Controls.Add(dashboard);
+
+            card1 = CreateCard("Total Bookings", "150", 0);
+            card2 = CreateCard("Available Rooms", "12", 1);
+            card3 = CreateCard("New Customers", "5", 2);
+
+            dashboard.Controls.AddRange(new Control[] { card1, card2, card3 });
+        }
+
+        private void SidebarButton_Click(object sender, EventArgs e)
+        {
+            Button clickedButton = sender as Button;
+            string tag = clickedButton != null ? clickedButton.Tag as string : null;
+
+            if (!string.IsNullOrEmpty(tag))
+            {
+                switch (tag)
+                {
+                    case "Booking Management":
+                        BookingManagementForm bmf = new BookingManagementForm();
+                        bmf.ShowDialog();
+                        break;
+                    case "Reports":
+                        ReportsForm rf = new ReportsForm();
+                        rf.ShowDialog();
+                        break;
+                    case "Logout":
+                        this.Close();
+                        break;
+                    default:
+                        MessageBox.Show(string.Format("You clicked: {0}", tag), "Menu Selection");
+                        break;
+                }
+            }
+        }
+
+        private Panel CreateCard(string title, string value, int index)
+        {
+            Panel card = new Panel();
+            card.Size = new Size(200, 120);
+            card.Location = new Point(index * 220, 0);
+            card.BackColor = Color.White;
+            card.BorderStyle = BorderStyle.FixedSingle;
+
+            Label lblTitle = new Label();
+            lblTitle.Text = title;
+            lblTitle.Font = new Font("Segoe UI", 10, FontStyle.Regular);
+            lblTitle.Location = new Point(10, 10);
+            lblTitle.AutoSize = true;
+
+            Label lblValue = new Label();
+            lblValue.Text = value;
+            lblValue.Font = new Font("Segoe UI", 20, FontStyle.Bold);
+            lblValue.ForeColor = accentColor;
+            lblValue.Location = new Point(10, 50);
+            lblValue.AutoSize = true;
+
+            card.Controls.Add(lblTitle);
+            card.Controls.Add(lblValue);
+
+            return card;
+        }
+    }
+
+    // Booking Management Form
+    public class BookingManagementForm : Form
+    {
+        private DataGridView dgvBookings;
+        private Button btnAdd, btnEdit, btnDelete;
+        private ToolTip toolTip;
+
+        public BookingManagementForm()
+        {
+            InitializeBookingManagementForm();
+            LoadBookingsData();
+        }
+
+        private void InitializeBookingManagementForm()
+        {
+            this.Text = "Booking Management";
+            this.Size = new Size(900, 600);
+            this.BackColor = Color.FromArgb(245, 247, 250);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            // DataGridView setup
+            dgvBookings = new DataGridView();
+            dgvBookings.Location = new Point(30, 80);
+            dgvBookings.Size = new Size(840, 400);
+            dgvBookings.BackgroundColor = Color.White;
+            dgvBookings.BorderStyle = BorderStyle.None;
+            dgvBookings.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvBookings.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+            dgvBookings.RowHeadersVisible = false;
+            dgvBookings.Font = new Font("Segoe UI", 10);
+            this.Controls.Add(dgvBookings);
+
+            // Buttons
+            btnAdd = CreateButton("Add", 30, 30);
+            btnEdit = CreateButton("Edit", 160, 30);
+            btnDelete = CreateButton("Delete", 290, 30);
+
+            btnAdd.Click += BtnAdd_Click;
+            btnEdit.Click += BtnEdit_Click;
+            btnDelete.Click += BtnDelete_Click;
+
+            // Tooltips
+            toolTip = new ToolTip();
+            toolTip.SetToolTip(btnAdd, "Add new booking");
+            toolTip.SetToolTip(btnEdit, "Edit selected booking");
+            toolTip.SetToolTip(btnDelete, "Delete selected booking");
+        }
+
+        private Button CreateButton(string text, int x, int y)
+        {
+            Button btn = new Button();
+            btn.Text = text;
+            btn.Location = new Point(x, y);
+            btn.Size = new Size(120, 40);
+            btn.BackColor = Color.White;
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            btn.Font = new Font("Segoe UI", 10);
+            this.Controls.Add(btn);
+            return btn;
+        }
+
+        private void LoadBookingsData()
+        {
+            // Sample data - in real app this would come from database
+            dgvBookings.DataSource = new List<Booking>
+            {
+                new Booking { Id = 1, CustomerName = "John Smith", Date = DateTime.Now.AddDays(1), RoomType = "Single" },
+                new Booking { Id = 2, CustomerName = "Sarah Johnson", Date = DateTime.Now.AddDays(2), RoomType = "Double" }
+            };
+        }
+
+        private void BtnAdd_Click(object sender, EventArgs e)
+        {
+            AddEditBookingForm form = new AddEditBookingForm();
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                LoadBookingsData();
+            }
+        }
+
+        private void BtnEdit_Click(object sender, EventArgs e)
+        {
+            if (dgvBookings.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a booking to edit", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int bookingId = (int)dgvBookings.SelectedRows[0].Cells["Id"].Value;
+            AddEditBookingForm form = new AddEditBookingForm(bookingId);
+            if (form.ShowDialog() == DialogResult.OK)
+            {
+                LoadBookingsData();
+            }
+        }
+
+        private void BtnDelete_Click(object sender, EventArgs e)
+        {
+            if (dgvBookings.SelectedRows.Count == 0)
+            {
+                MessageBox.Show("Please select a booking to delete", "Warning", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            int bookingId = (int)dgvBookings.SelectedRows[0].Cells["Id"].Value;
+            string customerName = dgvBookings.SelectedRows[0].Cells["CustomerName"].Value.ToString();
+
+            DeleteConfirmationForm confirmForm = new DeleteConfirmationForm(customerName);
+            if (confirmForm.ShowDialog() == DialogResult.Yes)
+            {
+                // In real app, delete from database here
+                MessageBox.Show("Booking deleted successfully", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                LoadBookingsData();
+            }
+        }
+    }
+
+    // Add/Edit Booking Form
+    public class AddEditBookingForm : Form
+    {
+        private TextBox txtCustomerName;
+        private ComboBox cmbRoomType;
+        private DateTimePicker dtpBookingDate;
+        private Button btnSave;
+
+        public AddEditBookingForm(int bookingId = 0)
+        {
+            InitializeForm();
+            if (bookingId > 0) LoadBookingData(bookingId);
+        }
+
+        private void InitializeForm()
+        {
+            this.Text = "Add/Edit Booking";
+            this.Size = new Size(400, 300);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+
+            // Customer Name
+            Label lblCustomer = new Label();
+            lblCustomer.Text = "Customer Name:";
+            lblCustomer.Location = new Point(20, 20);
+            lblCustomer.AutoSize = true;
+            this.Controls.Add(lblCustomer);
+
+            txtCustomerName = new TextBox();
+            txtCustomerName.Location = new Point(20, 50);
+            txtCustomerName.Size = new Size(350, 30);
+            this.Controls.Add(txtCustomerName);
+
+            // Room Type
+            Label lblRoomType = new Label();
+            lblRoomType.Text = "Room Type:";
+            lblRoomType.Location = new Point(20, 90);
+            lblRoomType.AutoSize = true;
+            this.Controls.Add(lblRoomType);
+
+            cmbRoomType = new ComboBox();
+            cmbRoomType.Location = new Point(20, 120);
+            cmbRoomType.Size = new Size(350, 30);
+            cmbRoomType.Items.AddRange(new string[] { "Single", "Double", "Suite", "Deluxe" });
+            this.Controls.Add(cmbRoomType);
+
+            // Booking Date
+            Label lblDate = new Label();
+            lblDate.Text = "Booking Date:";
+            lblDate.Location = new Point(20, 160);
+            lblDate.AutoSize = true;
+            this.Controls.Add(lblDate);
+
+            dtpBookingDate = new DateTimePicker();
+            dtpBookingDate.Location = new Point(20, 190);
+            dtpBookingDate.Size = new Size(350, 30);
+            this.Controls.Add(dtpBookingDate);
+
+            // Save Button
+            btnSave = new Button();
+            btnSave.Text = "Save";
+            btnSave.Location = new Point(150, 230);
+            btnSave.Size = new Size(100, 30);
+            btnSave.BackColor = Color.FromArgb(37, 99, 235);
+            btnSave.ForeColor = Color.White;
+            btnSave.Click += BtnSave_Click;
+            this.Controls.Add(btnSave);
+        }
+
+        private void LoadBookingData(int bookingId)
+        {
+            // In real app, load data from database
+            txtCustomerName.Text = "Sample Customer";
+            cmbRoomType.SelectedIndex = 1;
+            dtpBookingDate.Value = DateTime.Now.AddDays(1);
+        }
+
+        private void BtnSave_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(txtCustomerName.Text))
+            {
+                MessageBox.Show("Please enter customer name", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
+
+            this.DialogResult = DialogResult.OK;
+            this.Close();
+        }
+    }
+
+    // Delete Confirmation Form
+    public class DeleteConfirmationForm : Form
+    {
+        public DeleteConfirmationForm(string customerName)
+        {
+            InitializeConfirmationForm(customerName);
+        }
+
+        private void InitializeConfirmationForm(string customerName)
+        {
+            this.Text = "Confirm Delete";
+            this.Size = new Size(400, 200);
+            this.StartPosition = FormStartPosition.CenterParent;
+            this.FormBorderStyle = FormBorderStyle.FixedDialog;
+            this.MaximizeBox = false;
+
+            Label lblMessage = new Label();
+            lblMessage.Text = string.Format("Are you sure you want to delete booking for '{0}'?", customerName);
+            lblMessage.Font = new Font("Segoe UI", 12);
+            lblMessage.Location = new Point(20, 30);
+            lblMessage.AutoSize = true;
+            this.Controls.Add(lblMessage);
+
+            Button btnYes = new Button();
+            btnYes.Text = "Yes";
+            btnYes.DialogResult = DialogResult.Yes;
+            btnYes.Location = new Point(100, 100);
+            btnYes.Size = new Size(80, 30);
+            this.Controls.Add(btnYes);
+
+            Button btnNo = new Button();
+            btnNo.Text = "No";
+            btnNo.DialogResult = DialogResult.No;
+            btnNo.Location = new Point(200, 100);
+            btnNo.Size = new Size(80, 30);
+            this.Controls.Add(btnNo);
+        }
+    }
+
+    // Reports Form
+    public class ReportsForm : Form
+    {
+        private DataGridView dgvReports;
+        private Button btnExportExcel, btnExportPDF;
+        private ComboBox cmbReportType;
+        private DateTimePicker dtpFrom, dtpTo;
+
+        public ReportsForm()
+        {
+            InitializeReportsForm();
+            LoadReportData();
+        }
+
+        private void InitializeReportsForm()
+        {
+            this.Text = "Reports";
+            this.Size = new Size(1000, 650);
+            this.BackColor = Color.FromArgb(245, 247, 250);
+            this.StartPosition = FormStartPosition.CenterScreen;
+
+            // Report controls
+            Label lblReportType = new Label();
+            lblReportType.Text = "Report Type:";
+            lblReportType.Location = new Point(30, 30);
+            lblReportType.AutoSize = true;
+            this.Controls.Add(lblReportType);
+
+            cmbReportType = new ComboBox();
+            cmbReportType.Location = new Point(120, 27);
+            cmbReportType.Size = new Size(200, 30);
+            cmbReportType.Items.AddRange(new string[] { "Today's Bookings", "Weekly Bookings", "Monthly Bookings", "Custom Date Range" });
+            cmbReportType.SelectedIndex = 0;
+            cmbReportType.SelectedIndexChanged += CmbReportType_SelectedIndexChanged;
+            this.Controls.Add(cmbReportType);
+
+            Label lblFrom = new Label();
+            lblFrom.Text = "From:";
+            lblFrom.Location = new Point(350, 30);
+            lblFrom.AutoSize = true;
+            this.Controls.Add(lblFrom);
+
+            dtpFrom = new DateTimePicker();
+            dtpFrom.Location = new Point(390, 27);
+            dtpFrom.Size = new Size(150, 30);
+            dtpFrom.Enabled = false;
+            this.Controls.Add(dtpFrom);
+
+            Label lblTo = new Label();
+            lblTo.Text = "To:";
+            lblTo.Location = new Point(550, 30);
+            lblTo.AutoSize = true;
+            this.Controls.Add(lblTo);
+
+            dtpTo = new DateTimePicker();
+            dtpTo.Location = new Point(590, 27);
+            dtpTo.Size = new Size(150, 30);
+            dtpTo.Enabled = false;
+            this.Controls.Add(dtpTo);
+
+            // DataGridView
+            dgvReports = new DataGridView();
+            dgvReports.Location = new Point(30, 80);
+            dgvReports.Size = new Size(940, 450);
+            dgvReports.BackgroundColor = Color.White;
+            dgvReports.BorderStyle = BorderStyle.None;
+            dgvReports.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgvReports.Font = new Font("Segoe UI", 10);
+            this.Controls.Add(dgvReports);
+
+            // Export buttons
+            btnExportExcel = CreateExportButton("Export to Excel", 30, 550);
+            btnExportPDF = CreateExportButton("Export to PDF", 180, 550);
+
+            btnExportExcel.Click += BtnExportExcel_Click;
+            btnExportPDF.Click += BtnExportPDF_Click;
+        }
+
+        private Button CreateExportButton(string text, int x, int y)
+        {
+            Button btn = new Button();
+            btn.Text = text;
+            btn.Location = new Point(x, y);
+            btn.Size = new Size(140, 40);
+            btn.BackColor = Color.White;
+            btn.FlatStyle = FlatStyle.Flat;
+            btn.FlatAppearance.BorderColor = Color.FromArgb(200, 200, 200);
+            btn.Font = new Font("Segoe UI", 10);
+            this.Controls.Add(btn);
+            return btn;
+        }
+
+        private void CmbReportType_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            bool enableDatePickers = (cmbReportType.SelectedIndex == 3);
+            dtpFrom.Enabled = enableDatePickers;
+            dtpTo.Enabled = enableDatePickers;
+            LoadReportData();
+        }
+
+        private void LoadReportData()
+        {
+            // Sample data - in real app this would come from database
+            dgvReports.DataSource = new List<ReportItem>
+            {
+                new ReportItem { Date = DateTime.Now, CustomerName = "John Smith", Amount = 500, Status = "Completed" },
+                new ReportItem { Date = DateTime.Now.AddDays(-1), CustomerName = "Sarah Johnson", Amount = 750, Status = "Cancelled" }
+            };
+        }
+
+        private void BtnExportExcel_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "Excel Files|*.xlsx";
+            saveFileDialog.Title = "Save Report as Excel";
+            saveFileDialog.FileName = "Bookings_Report_" + DateTime.Now.ToString("yyyyMMdd");
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                MessageBox.Show("Report exported to Excel successfully", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+
+        private void BtnExportPDF_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog saveFileDialog = new SaveFileDialog();
+            saveFileDialog.Filter = "PDF Files|*.pdf";
+            saveFileDialog.Title = "Save Report as PDF";
+            saveFileDialog.FileName = "Bookings_Report_" + DateTime.Now.ToString("yyyyMMdd");
+
+            if (saveFileDialog.ShowDialog() == DialogResult.OK)
+            {
+                MessageBox.Show("Report exported to PDF successfully", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+    }
+
+    // Main Program
+    static class Program
+    {
+        [STAThread]
+        static void Main()
+        {
+            Application.EnableVisualStyles();
+            Application.SetCompatibleTextRenderingDefault(false);
+
+            // Show login form first
+            LoginForm loginForm = new LoginForm();
+            if (loginForm.ShowDialog() == DialogResult.OK)
+            {
+                // After successful login, show main form
+                MainForm mainForm = new MainForm();
+                Application.Run(mainForm);
+            }
+        }
+    }
+}
